@@ -1,0 +1,99 @@
+SIMPLE API DOCUMENTATION
+
+1. DATABASE SETUP
+-----------------
+1. Create a database (e.g., `simple_api_db`).
+```sql
+
+CREATE TABLE IF NOT EXISTS tbl_projects (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    project_token VARCHAR(64) NOT NULL UNIQUE,
+    contact_link VARCHAR(255) DEFAULT '',
+    is_maintenance TINYINT(1) DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS tbl_tokens (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    project_id INT NOT NULL,
+    token_code VARCHAR(255) NOT NULL UNIQUE,
+    type ENUM('static', 'dynamic') NOT NULL,
+    duration INT DEFAULT 0,
+    expire_date DATETIME DEFAULT NULL,
+    max_devices INT DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (project_id) REFERENCES tbl_projects(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS tbl_device_history (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    token_id INT NOT NULL,
+    device_uuid VARCHAR(255) NOT NULL,
+    first_used DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (token_id) REFERENCES tbl_tokens(id) ON DELETE CASCADE
+);
+
+```
+2. Run the SQL script provided in `database_update.sql` to create/update tables.
+   - New Columns in `tbl_projects`: 
+     * `project_token`: Unique ID for client connection.
+     * `contact_link`: URL for support (Telegram/FB).
+     * `is_maintenance`: Toggle maintenance mode.
+
+2. SERVER SETUP
+---------------
+1. Upload the contents of `src/webserver/` to your PHP host.
+2. Edit `src/webserver/config.php`:
+   - Update $db_host, $db_user, $db_pass, $db_name.
+3. Access the Admin Dashboard via `index.php`.
+
+3. ADMIN DASHBOARD USAGE
+------------------------
+- **New Interface:** Sidebar layout with Cards.
+- **Packages:**
+  - Create a package with a Name and "Contact Link".
+  - **Project Token:** Important! Copy this token to use in the Client source.
+  - **Maintenance:** Click "Bật/Tắt BT" to toggle Maintenance Mode. When ON, clients cannot log in.
+- **Keys:**
+  - Create Static Keys (Expire at specific date) or Dynamic Keys (Count days from first use).
+  - Assign keys to specific Packages.
+
+4. CLIENT SETUP (Objective-C)
+-----------------------------
+1. Open `src/client/HeaderAPI.h`.
+2. Update configuration:
+   - `kBaseAPIURL`: Path to your API (e.g., @"http://domain.com/api/connect.php").
+   - `kPackageToken`: Paste the **Project Token** from Admin Dashboard > Package List.
+3. Add files in `src/client/api/` to your project.
+
+5. CLIENT LOGIC FLOW
+--------------------
+1. **Startup (Init):**
+   - App connects to API (`action=init`) using `kPackageToken`.
+   - Checks Maintenance Status & downloads Contact Link.
+   
+2. **Maintenance Mode:**
+   - If Maintenance is ON: Shows Alert "Hệ thống đang bảo trì".
+   - Button "Liên hệ": Opens the Contact Link.
+   - Button "Thoát": Exits app.
+
+3. **Key Activation:**
+   - If Maintenance is OFF:
+     - **Left Button (Red):** "Contact" (Only visible if Contact Link is set in Admin).
+     - **Right Button:** "Login".
+   
+4. **Validation Logic:**
+   - Server checks: Key existence, Device limit (UUID), Expiry.
+   - Client double-checks:
+     - `days_left` must be >= 0.
+     - `expire_date` must be in the future.
+   - Updates `expire_date` automatically for Dynamic Keys on first use.
+
+6. API ENDPOINTS
+----------------
+- Check Package Info:
+  `GET /api/connect.php?action=init&token={PROJECT_TOKEN}`
+  
+- Validate Key:
+  `GET /api/connect.php?action=check&key={KEY}&uuid={UUID}`
