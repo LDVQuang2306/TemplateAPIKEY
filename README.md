@@ -93,7 +93,7 @@ src/
 
 **EN Steps**
 1. Create a new database (e.g. `simple_api_db`)
-2. Import the SQL file (`database_update.sql`)
+2. Import the SQL code in file docs
 3. Upload all files in `src/webserver/` to your hosting (public_html or root)
 4. Edit `config.php` with your database credentials
 5. Visit `http://your-domain.com/index.php`
@@ -101,7 +101,7 @@ src/
 
 **VI Các bước**
 1. Tạo cơ sở dữ liệu mới (ví dụ: `simple_api_db`)
-2. Import file SQL (`database_update.sql`)
+2. Import file SQL được ghi ở file docs
 3. Upload toàn bộ thư mục `src/webserver/` lên hosting
 4. Chỉnh sửa thông tin database trong `config.php`
 5. Truy cập `http://your-domain.com/index.php`
